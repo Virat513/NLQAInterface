@@ -1,40 +1,34 @@
 import streamlit as st
-from code_generator import generate_code
 import os
+from code_generator import generate_code
 
 os.makedirs("generated_tests", exist_ok=True)
 
-st.title("Playwright Test Code Generator")
+st.set_page_config(page_title="Playwright Test Generator", layout="centered")
+st.title("Playwright Test Generator")
 
-# Keep generated code between reruns
+nl_input = st.text_area("Enter test instruction (natural language)", height=200)
+
+# Session variable to hold generated code temporarily
 if "generated_code" not in st.session_state:
-    st.session_state.generated_code = None
+    st.session_state.generated_code = ""
 
-nl_input = st.text_area("Enter your test instruction:")
-
-# --- Generate Button ---
-if st.button("Generate Code", key="generate_btn"):
-    if nl_input.strip():
-        with st.spinner("Generating Playwright test..."):
-            code = generate_code(nl_input)
-        # Store this once, do NOT lose it during rerun
-        st.session_state.generated_code = code
+if st.button("Generate Code"):
+    if not nl_input.strip():
+        st.error("Please enter a test instruction.")
     else:
-        st.error("Please enter an instruction.")
+        with st.spinner("Generating test code..."):
+            code = generate_code(nl_input)
+            st.session_state.generated_code = code
 
-# --- Show Generated Code Only If Exists ---
 if st.session_state.generated_code:
-    st.subheader("Generated Playwright Test Code")
+    st.subheader("Generated Test Code")
     st.code(st.session_state.generated_code, language="python")
 
-    # Save button
-    if st.button("Save Code", key="save_btn"):
-        file_path = "generated_tests/generated_test.py"
+    if st.button("Save Code"):
+        file_path = os.path.join("generated_tests", "generated_test.py")
 
-        # APPEND CORRECTLY — write a separator and then append
         with open(file_path, "a", encoding="utf-8") as f:
-            f.write("\n\n# ---- New Test Case ----\n")
+            f.write("\n\n# -------------------- New Test Case --------------------\n")
             f.write(st.session_state.generated_code)
-            f.write("\n")
-
-        st.success(f"Saved to {file_path}")
+        st.success(f"Code appended to {file_path}")
